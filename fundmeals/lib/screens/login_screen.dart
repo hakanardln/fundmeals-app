@@ -34,7 +34,11 @@ class _LoginScreenState extends State<LoginScreen> {
       if (!mounted) return;
 
       if (success) {
-        Navigator.of(context).pushReplacementNamed('/main');
+        if (authProvider.requires2FA) {
+          Navigator.of(context).pushReplacementNamed('/verify-2fa');
+        } else {
+          Navigator.of(context).pushReplacementNamed('/main');
+        }
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -205,7 +209,28 @@ class _LoginScreenState extends State<LoginScreen> {
                             validator: (value) => value!.isEmpty ? 'Kata sandi wajib diisi' : null,
                           ),
                           
-                          const SizedBox(height: 32),
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: TextButton(
+                              onPressed: () {
+                                Navigator.pushNamed(context, '/forgot-password');
+                              },
+                              style: TextButton.styleFrom(
+                                padding: EdgeInsets.zero,
+                                minimumSize: Size.zero,
+                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              ),
+                              child: const Text(
+                                'Lupa Kata Sandi?',
+                                style: TextStyle(
+                                  color: AppColors.primary,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ),
+                          
+                          const SizedBox(height: 24),
                           
                           // Login Button
                           Consumer<AuthProvider>(

@@ -58,11 +58,76 @@ class ApiService {
     }
   }
 
+  Future<Response> verify2fa(int userId, String otp) async {
+    try {
+      final response = await _dio.post(
+        '/auth/verify-2fa',
+        data: {
+          'user_id': userId,
+          'otp': otp,
+        },
+      );
+      return response;
+    } on DioException catch (e) {
+      throw _handleException(e);
+    }
+  }
+
+  Future<Response> verifyEmailOtp(String otp) async {
+    try {
+      final response = await _dio.post(
+        '/auth/verify-email-otp',
+        data: {'otp': otp},
+      );
+      return response;
+    } on DioException catch (e) {
+      throw _handleException(e);
+    }
+  }
+
+  Future<Response> resendEmailOtp() async {
+    try {
+      final response = await _dio.post('/auth/resend-email-otp');
+      return response;
+    } on DioException catch (e) {
+      throw _handleException(e);
+    }
+  }
+
   Future<Response> register(Map<String, dynamic> userData) async {
     try {
       final response = await _dio.post(
-        AppConstants.registerEndpoint,
+        '/auth/register',
         data: userData,
+      );
+      return response;
+    } on DioException catch (e) {
+      throw _handleException(e);
+    }
+  }
+
+  Future<Response> forgotPassword(String email) async {
+    try {
+      final response = await _dio.post(
+        '/forgot-password',
+        data: {'email': email},
+      );
+      return response;
+    } on DioException catch (e) {
+      throw _handleException(e);
+    }
+  }
+
+  Future<Response> resetPassword(String email, String otp, String password, String passwordConfirmation) async {
+    try {
+      final response = await _dio.post(
+        '/reset-password',
+        data: {
+          'email': email,
+          'otp': otp,
+          'password': password,
+          'password_confirmation': passwordConfirmation,
+        },
       );
       return response;
     } on DioException catch (e) {
@@ -73,6 +138,25 @@ class ApiService {
   Future<Response> logout() async {
     try {
       final response = await _dio.post(AppConstants.logoutEndpoint);
+      return response;
+    } on DioException catch (e) {
+      throw _handleException(e);
+    }
+  }
+
+  // 2FA APIs
+  Future<Response> enable2fa() async {
+    try {
+      final response = await _dio.post('/auth/2fa/enable');
+      return response;
+    } on DioException catch (e) {
+      throw _handleException(e);
+    }
+  }
+
+  Future<Response> disable2fa() async {
+    try {
+      final response = await _dio.post('/auth/2fa/disable');
       return response;
     } on DioException catch (e) {
       throw _handleException(e);
@@ -214,6 +298,43 @@ class ApiService {
   Future<Response> cancelOrder(int id) async {
     try {
       final response = await _dio.post('${AppConstants.ordersEndpoint}/$id/cancel');
+      return response;
+    } on DioException catch (e) {
+      throw _handleException(e);
+    }
+  }
+
+  // Get all favorites
+  Future<Response> getFavorites() async {
+    try {
+      final response = await _dio.get('/favorites');
+      return response;
+    } on DioException catch (e) {
+      throw _handleException(e);
+    }
+  }
+
+  // Toggle favorite
+  Future<Response> toggleFavorite(int storeId) async {
+    try {
+      final response = await _dio.post('/favorites/toggle/$storeId');
+      return response;
+    } on DioException catch (e) {
+      throw _handleException(e);
+    }
+  }
+
+  // Add review
+  Future<Response> addReview(int storeId, int rating, String? comment) async {
+    try {
+      final response = await _dio.post(
+        '/reviews',
+        data: {
+          'store_id': storeId,
+          'rating': rating,
+          'comment': comment,
+        },
+      );
       return response;
     } on DioException catch (e) {
       throw _handleException(e);

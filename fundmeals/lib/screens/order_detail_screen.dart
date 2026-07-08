@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../../constants/app_colors.dart';
 import '../../providers/order_provider.dart';
+import '../../providers/review_provider.dart';
 import '../../widgets/common_widgets.dart';
 
 class OrderDetailScreen extends StatefulWidget {
@@ -324,6 +325,30 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                         ),
                       ),
                       
+                      if (order.status == 'completed' || order.status == 'selesai') ...[
+                        const SizedBox(height: 20),
+                        SizedBox(
+                          width: double.infinity,
+                          height: 56,
+                          child: ElevatedButton(
+                            onPressed: () => _showReviewDialog(context, order.restaurantId),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.primary,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(28),
+                              ),
+                            ),
+                            child: const Text(
+                              'Beri Ulasan',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                       const SizedBox(height: 40),
                     ],
                   ),
@@ -333,6 +358,119 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
           );
         },
       ),
+    );
+  }
+
+  void _showReviewDialog(BuildContext context, int storeId) {
+    int rating = 5;
+    final commentController = TextEditingController();
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setStateModal) {
+            return Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(context).viewInsets.bottom,
+                left: 24,
+                right: 24,
+                top: 24,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    'Beri Ulasan',
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 20),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: List.generate(5, (index) {
+                      return IconButton(
+                        icon: Icon(
+                          index < rating ? Icons.star_rounded : Icons.star_outline_rounded,
+                          color: Colors.orange,
+                          size: 40,
+                        ),
+                        onPressed: () {
+                          setStateModal(() {
+                            rating = index + 1;
+                          });
+                        },
+                      );
+                    }),
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: commentController,
+                    maxLines: 3,
+                    decoration: InputDecoration(
+                      hintText: 'Tulis ulasan Anda di sini...',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  Consumer<ReviewProvider>(
+                    builder: (context, reviewProvider, child) {
+                      return SizedBox(
+                        width: double.infinity,
+                        height: 50,
+                        child: ElevatedButton(
+                          onPressed: reviewProvider.isLoading
+                              ? null
+                              : () async {
+                                  final success = await reviewProvider.addReview(
+                                    storeId: storeId,
+                                    rating: rating,
+                                    comment: commentController.text,
+                                  );
+                                  if (context.mounted) {
+                                    if (success) {
+                                      Navigator.pop(context);
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(
+                                          content: Text('Ulasan berhasil dikirim!'),
+                                          backgroundColor: AppColors.success,
+                                        ),
+                                      );
+                                    } else {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          content: Text(reviewProvider.error ?? 'Gagal mengirim ulasan'),
+                                          backgroundColor: AppColors.error,
+                                        ),
+                                      );
+                                    }
+                                  }
+                                },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primary,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(25),
+                            ),
+                          ),
+                          child: reviewProvider.isLoading
+                              ? const CircularProgressIndicator(color: Colors.white)
+                              : const Text('Kirim Ulasan', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                        ),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 24),
+                ],
+              ),
+            );
+          },
+        );
+      },
     );
   }
 }

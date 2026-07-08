@@ -261,25 +261,51 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     activeColor: AppColors.primary,
                     onChanged: (val) {},
                   ),
-                  SwitchListTile(
-                    title: const Text('Verifikasi 2 Langkah (2FA)'),
-                    subtitle: const Text('Gunakan Authenticator'),
-                    value: is2faEnabled,
-                    activeColor: AppColors.primary,
-                    onChanged: (val) async {
-                      setStateModal(() {
-                        is2faEnabled = val;
-                      });
-                      await StorageService.saveBool('is2faEnabled', val);
-                      if (val) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('2FA (Authenticator) berhasil diaktifkan!')),
-                        );
-                      } else {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('2FA (Authenticator) dinonaktifkan!')),
-                        );
-                      }
+                  Consumer<AuthProvider>(
+                    builder: (context, authProvider, _) {
+                      return SwitchListTile(
+                        title: const Text('Verifikasi 2 Langkah (2FA)'),
+                        subtitle: const Text('Gunakan Authenticator'),
+                        value: is2faEnabled,
+                        activeColor: AppColors.primary,
+                        onChanged: authProvider.isLoading
+                            ? null
+                            : (val) async {
+                                if (val) {
+                                  final success = await authProvider.enable2FA();
+                                  if (success && authProvider.twoFactorSecret != null) {
+                                    setStateModal(() => is2faEnabled = val);
+                                    await StorageService.saveBool('is2faEnabled', val);
+                                    if (context.mounted) {
+                                      _show2FASecretDialog(context, authProvider.twoFactorSecret!);
+                                    }
+                                  } else {
+                                    if (context.mounted) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(content: Text(authProvider.error ?? 'Gagal mengaktifkan 2FA')),
+                                      );
+                                    }
+                                  }
+                                } else {
+                                  final success = await authProvider.disable2FA();
+                                  if (success) {
+                                    setStateModal(() => is2faEnabled = val);
+                                    await StorageService.saveBool('is2faEnabled', val);
+                                    if (context.mounted) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(content: Text('2FA (Authenticator) dinonaktifkan!')),
+                                      );
+                                    }
+                                  } else {
+                                    if (context.mounted) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(content: Text(authProvider.error ?? 'Gagal menonaktifkan 2FA')),
+                                      );
+                                    }
+                                  }
+                                }
+                              },
+                      );
                     },
                   ),
                   const SizedBox(height: 20),
@@ -287,6 +313,54 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
             );
           },
+        );
+      },
+    );
+  }
+
+  void _show2FASecretDialog(BuildContext context, String secret) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: const Text('Setup 2FA'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('Masukkan kode rahasia ini ke aplikasi Google Authenticator Anda:'),
+              const SizedBox(height: 20),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppColors.gray200,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: SelectableText(
+                  secret,
+                  style: const TextStyle(
+                    fontSize: 20,
+                    letterSpacing: 2,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              const SizedBox(height: 10),
+              const Text(
+                'Simpan kode ini baik-baik. Anda tidak akan bisa melihatnya lagi.',
+                style: TextStyle(color: AppColors.error, fontSize: 12),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Selesai', style: TextStyle(fontWeight: FontWeight.bold)),
+            ),
+          ],
         );
       },
     );

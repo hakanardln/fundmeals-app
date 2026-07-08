@@ -6,6 +6,8 @@ import 'providers/auth_provider.dart';
 import 'providers/product_provider.dart';
 import 'providers/store_provider.dart';
 import 'providers/cart_provider.dart';
+import 'providers/favorite_provider.dart';
+import 'providers/review_provider.dart';
 import 'providers/order_provider.dart';
 import 'providers/theme_provider.dart';
 import 'services/api_service.dart';
@@ -20,6 +22,10 @@ import 'screens/orders_screen.dart';
 import 'screens/profile_screen.dart';
 import 'screens/product_detail_screen.dart';
 import 'screens/order_detail_screen.dart';
+import 'screens/otp_screen.dart';
+import 'screens/email_verify_screen.dart';
+import 'screens/favorites_screen.dart';
+import 'screens/forgot_password_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -63,6 +69,18 @@ class MyApp extends StatelessWidget {
           },
         ),
         ChangeNotifierProvider(create: (_) => CartProvider()),
+        ChangeNotifierProxyProvider<ApiService, FavoriteProvider>(
+          create: (context) => FavoriteProvider(context.read<ApiService>()),
+          update: (context, apiService, favoriteProvider) {
+            return favoriteProvider ?? FavoriteProvider(apiService);
+          },
+        ),
+        ChangeNotifierProxyProvider<ApiService, ReviewProvider>(
+          create: (context) => ReviewProvider(context.read<ApiService>()),
+          update: (context, apiService, reviewProvider) {
+            return reviewProvider ?? ReviewProvider(apiService);
+          },
+        ),
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
       ],
       child: Consumer<ThemeProvider>(
@@ -106,6 +124,10 @@ class MyApp extends StatelessWidget {
               '/cart': (context) => const CartScreen(),
               '/orders': (context) => const OrdersScreen(),
               '/profile': (context) => const ProfileScreen(),
+              '/verify-2fa': (context) => const OtpScreen(),
+              '/verify-email-otp': (context) => const EmailVerifyScreen(),
+              '/favorites': (context) => const FavoritesScreen(),
+              '/forgot-password': (context) => const ForgotPasswordScreen(),
               '/product-detail': (context) {
                 final productId = ModalRoute.of(context)?.settings.arguments as int;
                 return ProductDetailScreen(productId: productId);
